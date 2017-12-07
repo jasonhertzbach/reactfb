@@ -2,13 +2,16 @@ import React, { Component } from 'react'
 import ReactDOM from 'react-dom'
 import 'bootstrap/dist/css/bootstrap.css'
 import axios from 'axios'
+import LifetimeStats from './LifetimeStats'
 
 class Dashboard extends Component {
   constructor(props) {
     super(props)
     this.state = {
       user: {},
-      loggedIn: false
+      loggedIn: false,
+      lifetimeBest: {steps: "", distance: ""},
+      lifetimeTotals: {steps: "", distance: ""}
     }
   }
 
@@ -28,27 +31,69 @@ class Dashboard extends Component {
         this.setState({user: response.data.user, loggedIn: true})
       })
       .catch(error => console.log(error))
+
+      axios({
+        method: 'get',
+        url: 'https://api.fitbit.com/1/user/-/activities.json',
+        headers: { 'Authorization': 'Bearer ' + fitbitToken },
+        mod: 'cors'
+      })
+      .then(response => {
+        console.log(response)
+        this.setState({lifetimeBest: response.data.best.total, lifetimeTotals: response.data.lifetime.total})
+      })
+      .catch(error => console.log(error))
+
     }
   }
-
 
   render () {
     return (
       <div className="container">
         <header className="text-center">
-          <span className="pull-right">{this.state.user.displayName}</span>
+          <span className="pull-right">{ this.state.user.displayName}</span>
           <h1 className="page-header">ReactFB</h1>
           <p className="lead">Your personal fitness dashboard</p>
         </header>
 
-        {
-          !this.state.loggedIn &&
+        {!this.state.loggedIn &&
           <div className="row text-center">
             <a href="https://www.fitbit.com/oauth2/authorize?response_type=token&client_id=22CGXV&redirect_uri=http%3A%2F%2F%localhost%3A8000&scope=activity%20nutrition%20heartrate%20location%20nutrition%20profile%20settings%20sleep%20social%20weight&expires_in=604800">
               Log in with fit bit
             </a>
           </div>
         }
+
+        <div className="row">
+          <div className="col-lg-3">
+          <LifetimeStats lifetimeTotals={this.state.lifetimeTotals} lifetimeBest={this.state.lifetimeBest} />
+
+            <div className="panel panel-default">
+              <div className="panel-heading"><h4>Badges</h4></div>
+              <div className="panel-body">
+              </div>
+            </div>
+          </div>
+
+          <div className="col-lg-6">
+            <div className="panel panel-default">
+              <div className="panel-heading">Steps</div>
+            </div>
+
+            <div className="panel panel-default">
+              <div className="panel-heading">Distance (miles)</div>
+            </div>
+
+
+          </div>
+
+          <div className="col-lg-2 col-lg-offset-1">
+            <div className="panel panel-default">
+              <div className="panel-heading">Your Friends</div>
+            </div>
+          </div>
+
+        </div>
       </div>
     )
   }
